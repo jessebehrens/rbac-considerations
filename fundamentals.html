@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBAC Fundamentals | Snowflake RBAC Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="background: #FEF3C7; color: #92400E; padding: 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #F59E0B;">DRAFT - Work in Progress - Not Ready for Distribution</div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">RBAC Guide</a>
+            <ul>
+                <li><a href="fundamentals.html" class="active">Fundamentals</a></li>
+                <li><a href="role-types.html">Role Types</a></li>
+                <li><a href="database-roles.html">Database Roles</a></li>
+                
+                <li><a href="platform-roles.html">Platform Roles</a></li>
+                <li><a href="checklist.html">Checklist</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="breadcrumb"><a href="index.html">Home</a> / Fundamentals</div>
+        <h1>RBAC Fundamentals</h1>
+        <p>Understand the building blocks of Snowflake's access control model before designing your hierarchy.</p>
+    </div>
+
+    <div class="container">
+        <section>
+            <h2>The Access Control Triad</h2>
+            <p>Snowflake's access control is built on three core concepts that work together:</p>
+
+            <div class="quick-ref">
+                <div class="quick-ref-card">
+                    <h5>Securable Objects</h5>
+                    <p>Anything you can grant access to: databases, schemas, tables, views, warehouses, stages, etc. <strong>Access is denied unless explicitly granted.</strong></p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>Roles</h5>
+                    <p>Containers for privileges. Roles are granted to users or to other roles. Users inherit all privileges from their granted roles.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>Privileges</h5>
+                    <p>Specific permissions on objects: SELECT, INSERT, USAGE, OWNERSHIP, etc. In RBAC, privileges are always granted to roles, never directly to users.</p>
+                </div>
+            </div>
+
+            <h3>How They Connect</h3>
+            <p>The flow of access in Snowflake works like this:</p>
+            
+            <pre><code><span class="comment">-- 1. Privileges are granted on Objects to Roles</span>
+<span class="keyword">GRANT SELECT ON TABLE</span> sales.orders <span class="keyword">TO ROLE</span> <span class="role-name">analyst_role</span>;
+
+<span class="comment">-- 2. Roles are granted to Users</span>
+<span class="keyword">GRANT ROLE</span> <span class="role-name">analyst_role</span> <span class="keyword">TO USER</span> jane;
+
+<span class="comment">-- 3. Jane can now SELECT from sales.orders when using analyst_role</span></code></pre>
+        </section>
+
+        <section>
+            <h2>System-Defined Roles</h2>
+            <p>Snowflake provides five built-in roles. Understanding their purpose prevents misuse:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Purpose</th>
+                        <th>Key Privileges</th>
+                        <th>When to Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ACCOUNTADMIN</code></td>
+                        <td>Top-level account management</td>
+                        <td>All privileges + account settings</td>
+                        <td>Initial setup, billing, account parameters only</td>
+                    </tr>
+                    <tr>
+                        <td><code>SECURITYADMIN</code></td>
+                        <td>Grant management</td>
+                        <td>MANAGE GRANTS globally</td>
+                        <td>Sparingly—use custom roles like PLATFORM_ADMIN instead</td>
+                    </tr>
+                    <tr>
+                        <td><code>USERADMIN</code></td>
+                        <td>User and role creation</td>
+                        <td>CREATE USER, CREATE ROLE</td>
+                        <td>Creating users and roles (not granting privileges)</td>
+                    </tr>
+                    <tr>
+                        <td><code>SYSADMIN</code></td>
+                        <td>Object management</td>
+                        <td>CREATE DATABASE, CREATE WAREHOUSE</td>
+                        <td>Creating and managing data objects</td>
+                    </tr>
+                    <tr>
+                        <td><code>PUBLIC</code></td>
+                        <td>Default access for all users</td>
+                        <td>None by default</td>
+                        <td>Objects that everyone should access</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>System Role Hierarchy</h3>
+            <p>The system roles have a built-in hierarchy:</p>
+
+            <div class="hierarchy-diagram">
+                <svg class="hierarchy-svg" viewBox="0 0 500 200" width="500" height="200">
+                    <g class="role-node system" transform="translate(200, 20)">
+                        <rect width="100" height="36" x="0" y="0"></rect>
+                        <text x="50" y="23" text-anchor="middle">ACCOUNTADMIN</text>
+                    </g>
+                    <path class="connector" d="M250,56 L250,70 L175,70 L175,84"></path>
+                    <path class="connector" d="M250,56 L250,70 L325,70 L325,84"></path>
+                    <g class="role-node system" transform="translate(100, 84)">
+                        <rect width="100" height="36" x="0" y="0"></rect>
+                        <text x="50" y="23" text-anchor="middle">SECURITYADMIN</text>
+                    </g>
+                    <g class="role-node system" transform="translate(300, 84)">
+                        <rect width="100" height="36" x="0" y="0"></rect>
+                        <text x="50" y="23" text-anchor="middle">SYSADMIN</text>
+                    </g>
+                    <path class="connector" d="M150,120 L150,148"></path>
+                    <g class="role-node system" transform="translate(100, 148)">
+                        <rect width="100" height="36" x="0" y="0"></rect>
+                        <text x="50" y="23" text-anchor="middle">USERADMIN</text>
+                    </g>
+                </svg>
+                <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 16px;">
+                    ACCOUNTADMIN inherits privileges from both SECURITYADMIN and SYSADMIN.<br>
+                    SECURITYADMIN inherits from USERADMIN.
+                </p>
+            </div>
+
+            <div class="callout callout-danger">
+                <div class="callout-title">Critical Mistakes to Avoid</div>
+                <ul style="margin: 8px 0 0 20px;">
+                    <li><strong>Never use ACCOUNTADMIN as any user's default role</strong></li>
+                    <li><strong>Never create objects with ACCOUNTADMIN</strong> — they become hard to manage</li>
+                    <li><strong>Never use ACCOUNTADMIN in automated scripts</strong></li>
+                    <li><strong>Avoid daily use of SECURITYADMIN</strong> — create custom admin roles without MANAGE GRANTS</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Principle of Least Privilege</h2>
+            <p>Every RBAC design should start with this principle:</p>
+            
+            <div class="callout callout-success">
+                <div class="callout-title">Grant only the minimum privileges necessary for users to perform their job functions.</div>
+            </div>
+
+            <h3>Why This Matters</h3>
+            <div class="consideration-grid">
+                <div class="consideration-item">
+                    <h5>Reduces Blast Radius</h5>
+                    <p>If credentials are compromised, damage is limited to what that role can access.</p>
+                </div>
+                <div class="consideration-item">
+                    <h5>Simplifies Auditing</h5>
+                    <p>Fewer grants mean clearer audit trails and easier compliance reviews.</p>
+                </div>
+                <div class="consideration-item">
+                    <h5>Enforces Separation of Duties</h5>
+                    <p>Different roles for different responsibilities prevents conflicts of interest.</p>
+                </div>
+                <div class="consideration-item">
+                    <h5>Supports Compliance</h5>
+                    <p>Required by GDPR, HIPAA, SOC 2, and other regulatory frameworks.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Object Hierarchy & Access Requirements</h2>
+            <p>To access an object in Snowflake, you need privileges at <strong>every level</strong> of the hierarchy:</p>
+
+            <div class="hierarchy-diagram">
+                <svg class="hierarchy-svg" viewBox="0 0 400 220" width="400" height="220">
+                    <g transform="translate(150, 10)">
+                        <rect width="100" height="36" fill="#3B82F6" stroke="#2563EB" stroke-width="2" rx="6"></rect>
+                        <text x="50" y="23" text-anchor="middle" fill="white" font-size="12" font-weight="500">DATABASE</text>
+                    </g>
+                    <text x="290" y="33" fill="#64748B" font-size="11">← USAGE required</text>
+                    <path class="connector" d="M200,46 L200,74"></path>
+                    <g transform="translate(150, 74)">
+                        <rect width="100" height="36" fill="#8B5CF6" stroke="#7C3AED" stroke-width="2" rx="6"></rect>
+                        <text x="50" y="23" text-anchor="middle" fill="white" font-size="12" font-weight="500">SCHEMA</text>
+                    </g>
+                    <text x="290" y="97" fill="#64748B" font-size="11">← USAGE required</text>
+                    <path class="connector" d="M200,110 L200,138"></path>
+                    <g transform="translate(150, 138)">
+                        <rect width="100" height="36" fill="#10B981" stroke="#059669" stroke-width="2" rx="6"></rect>
+                        <text x="50" y="23" text-anchor="middle" fill="white" font-size="12" font-weight="500">TABLE</text>
+                    </g>
+                    <text x="290" y="161" fill="#64748B" font-size="11">← SELECT, INSERT, etc.</text>
+                </svg>
+            </div>
+
+            <p>A common mistake is granting SELECT on a table but forgetting USAGE on the database and schema:</p>
+
+            <pre><code><span class="comment">-- This alone won't work!</span>
+<span class="keyword">GRANT SELECT ON TABLE</span> mydb.myschema.mytable <span class="keyword">TO ROLE</span> <span class="role-name">reader</span>;
+
+<span class="comment">-- You also need:</span>
+<span class="keyword">GRANT USAGE ON DATABASE</span> mydb <span class="keyword">TO ROLE</span> <span class="role-name">reader</span>;
+<span class="keyword">GRANT USAGE ON SCHEMA</span> mydb.myschema <span class="keyword">TO ROLE</span> <span class="role-name">reader</span>;
+
+<span class="comment">-- And to run queries, warehouse access:</span>
+<span class="keyword">GRANT USAGE ON WAREHOUSE</span> compute_wh <span class="keyword">TO ROLE</span> <span class="role-name">reader</span>;</code></pre>
+
+            <div class="callout callout-warning">
+                <div class="callout-title">Don't Forget Warehouses</div>
+                <p>Users need USAGE on a warehouse to execute queries, even if they have all the object privileges. This is a common source of "permission denied" errors.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Reference: Which Role to Use</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Role to Use</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Create a new user</td>
+                        <td><code>USERADMIN</code></td>
+                    </tr>
+                    <tr>
+                        <td>Create a new role</td>
+                        <td><code>USERADMIN</code></td>
+                    </tr>
+                    <tr>
+                        <td>Grant role to user</td>
+                        <td><code>SECURITYADMIN</code></td>
+                    </tr>
+                    <tr>
+                        <td>Grant role to another role</td>
+                        <td><code>SECURITYADMIN</code></td>
+                    </tr>
+                    <tr>
+                        <td>Grant object privileges</td>
+                        <td><code>SECURITYADMIN</code> or object owner</td>
+                    </tr>
+                    <tr>
+                        <td>Create database or warehouse</td>
+                        <td><code>SYSADMIN</code></td>
+                    </tr>
+                    <tr>
+                        <td>View billing / account settings</td>
+                        <td><code>ACCOUNTADMIN</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <div class="next-page">
+            <a href="index.html" class="prev">← Home</a>
+            <a href="role-types.html" class="next">Role Types →</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Snowflake RBAC Design Guide</p>
+    </footer>
+</body>
+</html>

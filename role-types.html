@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Types | Snowflake RBAC Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="background: #FEF3C7; color: #92400E; padding: 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #F59E0B;">DRAFT - Work in Progress - Not Ready for Distribution</div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">RBAC Guide</a>
+            <ul>
+                <li><a href="fundamentals.html">Fundamentals</a></li>
+                <li><a href="role-types.html" class="active">Role Types</a></li>
+                <li><a href="database-roles.html">Database Roles</a></li>
+                
+                <li><a href="platform-roles.html">Platform Roles</a></li>
+                <li><a href="checklist.html">Checklist</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="breadcrumb"><a href="index.html">Home</a> / Role Types</div>
+        <h1>Access, Functional & Service Roles</h1>
+        <p>The most important concept in RBAC design: organizing roles by their intent.</p>
+    </div>
+
+    <div class="container">
+        <section>
+            <h2>The Three-Tier Role Model</h2>
+            <p>While Snowflake doesn't technically differentiate between role types, organizing roles by their <em>intent</em> creates a maintainable, scalable hierarchy. This is the most important concept in RBAC design.</p>
+
+            <div class="hierarchy-diagram">
+                <svg class="hierarchy-svg" viewBox="0 0 600 120" width="600" height="120">
+                    <g transform="translate(20, 40)">
+                        <rect width="140" height="44" fill="#10B981" stroke="#059669" stroke-width="2" rx="8"></rect>
+                        <text x="70" y="20" text-anchor="middle" fill="white" font-size="11" font-weight="600">ACCESS ROLES</text>
+                        <text x="70" y="34" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="9">Object Permissions</text>
+                    </g>
+                    <path d="M170,62 L200,62" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"></path>
+                    <text x="185" y="52" fill="#64748B" font-size="10">granted to</text>
+                    
+                    <g transform="translate(210, 40)">
+                        <rect width="140" height="44" fill="#0EA5E9" stroke="#0284C7" stroke-width="2" rx="8"></rect>
+                        <text x="70" y="20" text-anchor="middle" fill="white" font-size="11" font-weight="600">FUNCTIONAL ROLES</text>
+                        <text x="70" y="34" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="9">Job Functions</text>
+                    </g>
+                    <path d="M360,62 L390,62" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"></path>
+                    <text x="375" y="52" fill="#64748B" font-size="10">granted to</text>
+                    
+                    <g transform="translate(400, 40)">
+                        <rect width="140" height="44" fill="#1E293B" stroke="#0F172A" stroke-width="2" rx="8"></rect>
+                        <text x="70" y="20" text-anchor="middle" fill="white" font-size="11" font-weight="600">USERS</text>
+                        <text x="70" y="34" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="9">Human & Service</text>
+                    </g>
+                    
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#94A3B8"></path>
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+
+            <div class="callout callout-info">
+                <div class="callout-title">Key Insight</div>
+                <p>Access roles define <strong>what</strong> can be accessed. Functional roles define <strong>who</strong> needs access. Users only receive functional roles—never access roles directly.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Access Roles (Building Blocks)</h2>
+            
+            <div class="two-column">
+                <div>
+                    <h4>Purpose</h4>
+                    <p>Grant specific privileges on specific objects. These are the building blocks of your access model.</p>
+                    
+                    <h4>Naming Convention</h4>
+                    <p><code>{DATABASE}_{SCHEMA}_{LEVEL}_AR</code></p>
+                    <p>Examples:</p>
+                    <ul>
+                        <li><code>SALES_DB_READ_AR</code></li>
+                        <li><code>SALES_DB_WRITE_AR</code></li>
+                        <li><code>ANALYTICS_REPORTING_READ_AR</code></li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <h4 style="margin-top: 0; color: #10B981;">Access Role Rules</h4>
+                    <ul class="checklist">
+                        <li>One access role per database/schema + permission level</li>
+                        <li>Never granted directly to users</li>
+                        <li>Contains only object privileges</li>
+                        <li>Composed into functional roles</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Standard Access Role Pattern</h3>
+            <pre><code><span class="comment">-- READ Access Role (SELECT only)</span>
+<span class="keyword">USE ROLE</span> USERADMIN;
+<span class="keyword">CREATE ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>
+    <span class="keyword">COMMENT</span> = <span class="string">'Read access to SALES_DB database'</span>;
+
+<span class="keyword">USE ROLE</span> SECURITYADMIN;
+<span class="keyword">GRANT USAGE ON DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+<span class="keyword">GRANT USAGE ON ALL SCHEMAS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+<span class="keyword">GRANT SELECT ON ALL TABLES IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+<span class="keyword">GRANT SELECT ON ALL VIEWS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+
+<span class="comment">-- Future grants for new objects</span>
+<span class="keyword">GRANT USAGE ON FUTURE SCHEMAS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+<span class="keyword">GRANT SELECT ON FUTURE TABLES IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;
+<span class="keyword">GRANT SELECT ON FUTURE VIEWS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_READ_AR</span>;</code></pre>
+
+            <pre><code><span class="comment">-- WRITE Access Role (DML operations)</span>
+<span class="keyword">USE ROLE</span> USERADMIN;
+<span class="keyword">CREATE ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>
+    <span class="keyword">COMMENT</span> = <span class="string">'Read-write access to SALES_DB database'</span>;
+
+<span class="keyword">USE ROLE</span> SECURITYADMIN;
+<span class="keyword">GRANT USAGE ON DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>;
+<span class="keyword">GRANT USAGE ON ALL SCHEMAS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>;
+<span class="keyword">GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN DATABASE</span> SALES_DB 
+    <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>;
+
+<span class="comment">-- Future grants</span>
+<span class="keyword">GRANT USAGE ON FUTURE SCHEMAS IN DATABASE</span> SALES_DB <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>;
+<span class="keyword">GRANT SELECT, INSERT, UPDATE, DELETE ON FUTURE TABLES IN DATABASE</span> SALES_DB 
+    <span class="keyword">TO ROLE</span> <span class="role-name">SALES_DB_WRITE_AR</span>;</code></pre>
+        </section>
+
+        <section>
+            <h2>Functional Roles (Business Alignment)</h2>
+            
+            <div class="two-column">
+                <div>
+                    <h4>Purpose</h4>
+                    <p>Represent job functions within the organization. These are what you grant to end users.</p>
+                    
+                    <h4>Naming Convention</h4>
+                    <p><code>{TEAM}_{FUNCTION}_FR</code></p>
+                    <p>Examples:</p>
+                    <ul>
+                        <li><code>DATA_ENGINEER_FR</code></li>
+                        <li><code>FINANCE_ANALYST_FR</code></li>
+                        <li><code>MARKETING_MANAGER_FR</code></li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <h4 style="margin-top: 0; color: #0EA5E9;">Functional Role Rules</h4>
+                    <ul class="checklist">
+                        <li>Granted to end users</li>
+                        <li>Composed of multiple access roles</li>
+                        <li>Aligns with org chart/job titles</li>
+                        <li>Should roll up to SYSADMIN</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Creating Functional Roles</h3>
+            <pre><code><span class="comment">-- Create functional role for Data Analysts</span>
+<span class="keyword">USE ROLE</span> USERADMIN;
+<span class="keyword">CREATE ROLE</span> <span class="role-name">DATA_ANALYST_FR</span>
+    <span class="keyword">COMMENT</span> = <span class="string">'Functional role for data analysts'</span>;
+
+<span class="comment">-- Grant access roles to the functional role</span>
+<span class="keyword">USE ROLE</span> SECURITYADMIN;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">SALES_DB_READ_AR</span> <span class="keyword">TO ROLE</span> <span class="role-name">DATA_ANALYST_FR</span>;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">MARKETING_DB_READ_AR</span> <span class="keyword">TO ROLE</span> <span class="role-name">DATA_ANALYST_FR</span>;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">ANALYTICS_DB_WRITE_AR</span> <span class="keyword">TO ROLE</span> <span class="role-name">DATA_ANALYST_FR</span>;
+
+<span class="comment">-- Grant warehouse access</span>
+<span class="keyword">GRANT USAGE ON WAREHOUSE</span> ANALYST_WH <span class="keyword">TO ROLE</span> <span class="role-name">DATA_ANALYST_FR</span>;
+
+<span class="comment">-- Roll up to SYSADMIN (important!)</span>
+<span class="keyword">GRANT ROLE</span> <span class="role-name">DATA_ANALYST_FR</span> <span class="keyword">TO ROLE</span> SYSADMIN;
+
+<span class="comment">-- Grant to users</span>
+<span class="keyword">GRANT ROLE</span> <span class="role-name">DATA_ANALYST_FR</span> <span class="keyword">TO USER</span> jane_smith;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">DATA_ANALYST_FR</span> <span class="keyword">TO USER</span> bob_jones;</code></pre>
+        </section>
+
+        <section>
+            <h2>Service Roles (Non-Human Access)</h2>
+            
+            <div class="two-column">
+                <div>
+                    <h4>Purpose</h4>
+                    <p>Grant access to external tools, ETL pipelines, and BI platforms. These are functional roles for machines.</p>
+                    
+                    <h4>Naming Convention</h4>
+                    <p><code>{TOOL/SERVICE}_SVC</code></p>
+                    <p>Examples:</p>
+                    <ul>
+                        <li><code>DBT_SVC</code></li>
+                        <li><code>TABLEAU_SVC</code></li>
+                        <li><code>FIVETRAN_SVC</code></li>
+                        <li><code>AIRBYTE_SVC</code></li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <h4 style="margin-top: 0; color: #8B5CF6;">Service Role Rules</h4>
+                    <ul class="checklist">
+                        <li>Granted to service users (TYPE = SERVICE)</li>
+                        <li>Composed of access roles (like functional)</li>
+                        <li>Never granted to human users</li>
+                        <li>Uses key pair auth, not passwords</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Creating Service Roles</h3>
+            <pre><code><span class="comment">-- Create service role for Tableau</span>
+<span class="keyword">USE ROLE</span> USERADMIN;
+<span class="keyword">CREATE ROLE</span> <span class="role-name">TABLEAU_SVC</span>
+    <span class="keyword">COMMENT</span> = <span class="string">'Service role for Tableau BI platform'</span>;
+
+<span class="comment">-- Grant only the access roles needed</span>
+<span class="keyword">USE ROLE</span> SECURITYADMIN;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">ANALYTICS_DB_READ_AR</span> <span class="keyword">TO ROLE</span> <span class="role-name">TABLEAU_SVC</span>;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">REPORTING_DB_READ_AR</span> <span class="keyword">TO ROLE</span> <span class="role-name">TABLEAU_SVC</span>;
+
+<span class="comment">-- Grant warehouse access</span>
+<span class="keyword">GRANT USAGE ON WAREHOUSE</span> BI_WH <span class="keyword">TO ROLE</span> <span class="role-name">TABLEAU_SVC</span>;
+
+<span class="comment">-- Roll up to SYSADMIN</span>
+<span class="keyword">GRANT ROLE</span> <span class="role-name">TABLEAU_SVC</span> <span class="keyword">TO ROLE</span> SYSADMIN;
+
+<span class="comment">-- Create service user (TYPE = SERVICE prevents password login)</span>
+<span class="keyword">USE ROLE</span> USERADMIN;
+<span class="keyword">CREATE USER</span> TABLEAU_USER
+    <span class="keyword">TYPE</span> = SERVICE
+    <span class="keyword">DEFAULT_ROLE</span> = <span class="role-name">TABLEAU_SVC</span>
+    <span class="keyword">DEFAULT_WAREHOUSE</span> = BI_WH
+    <span class="keyword">COMMENT</span> = <span class="string">'Service account for Tableau'</span>;
+
+<span class="keyword">USE ROLE</span> SECURITYADMIN;
+<span class="keyword">GRANT ROLE</span> <span class="role-name">TABLEAU_SVC</span> <span class="keyword">TO USER</span> TABLEAU_USER;</code></pre>
+
+            <div class="callout callout-warning">
+                <div class="callout-title">Service User Type</div>
+                <p>Create service accounts with <code>TYPE = SERVICE</code>. This prevents password-based login and MFA requirements—services authenticate via key pairs or OAuth. Never grant service roles to human users.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Anti-Patterns to Avoid</h2>
+            
+            <div class="callout callout-danger">
+                <div class="callout-title">Don't Do This</div>
+                <ul class="checklist anti-checklist">
+                    <li><strong>Granting access roles directly to users</strong> — Always use functional roles as intermediaries</li>
+                    <li><strong>Creating functional-to-functional role grants</strong> — Keep each functional role independent</li>
+                    <li><strong>Mixing human and service accounts</strong> — Use separate roles for each</li>
+                    <li><strong>Skipping the access role layer</strong> — It provides reusability and reduces duplication</li>
+                </ul>
+            </div>
+
+            <h3>Why Use the Three-Tier Model?</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Without Three-Tier</th>
+                        <th>With Three-Tier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>New analyst joins</td>
+                        <td>Grant 20+ individual privileges</td>
+                        <td>Grant 1 functional role</td>
+                    </tr>
+                    <tr>
+                        <td>Database permissions change</td>
+                        <td>Update grants for every user</td>
+                        <td>Update 1 access role</td>
+                    </tr>
+                    <tr>
+                        <td>Audit who has access</td>
+                        <td>Check every user's grants</td>
+                        <td>Check role memberships</td>
+                    </tr>
+                    <tr>
+                        <td>New BI tool added</td>
+                        <td>Copy grants from another service</td>
+                        <td>Compose from existing access roles</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <div class="next-page">
+            <a href="fundamentals.html" class="prev">← Fundamentals</a>
+            <a href="sysadmin-rollup.html" class="next">Hierarchy Design →</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Snowflake RBAC Design Guide</p>
+    </footer>
+</body>
+</html>

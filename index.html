@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowflake RBAC Design Guide | Enterprise Role-Based Access Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .full-hierarchy {
+            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+        
+        .full-hierarchy svg {
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .role-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        
+        .tier-badge {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            fill: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div style="background: #FEF3C7; color: #92400E; padding: 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #F59E0B;">DRAFT - Work in Progress - Not Ready for Distribution</div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">RBAC Guide</a>
+            <ul>
+                <li><a href="fundamentals.html">Fundamentals</a></li>
+                <li><a href="role-types.html">Role Types</a></li>
+                <li><a href="database-roles.html">Database Roles</a></li>
+                
+                <li><a href="platform-roles.html">Platform Roles</a></li>
+                <li><a href="checklist.html">Checklist</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero hero-large">
+        <h1>Snowflake RBAC Design Guide</h1>
+        <p>A framework for thinking through Role-Based Access Control decisions in Snowflake.</p>
+    </div>
+
+    <div class="container">
+        <section>
+            <h2>Core Principles</h2>
+            
+            <div class="quick-ref">
+                <div class="quick-ref-card">
+                    <h5>1. Reserve High-Privilege Roles</h5>
+                    <p>ACCOUNTADMIN and SECURITYADMIN should be used sparingly. Create custom admin roles (PLATFORM_ADMIN, FINOPS_ADMIN) for daily operations.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>2. Separate Access from Function</h5>
+                    <p>Create Access Roles for object permissions. Create Functional Roles for job titles. Grant access roles to functional roles.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>3. Plan Your Hierarchy Intentionally</h5>
+                    <p>Decide early whether custom roles should <a href="sysadmin-rollup.html">roll up to SYSADMIN</a>. There's no one-size-fits-all answer—base this on your governance model, compliance needs, and operational structure.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>4. Use Future Grants</h5>
+                    <p>Set up future grants so new objects automatically inherit correct permissions. Reduces ongoing maintenance.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Role Hierarchy Framework</h2>
+            <p>This diagram shows an RBAC framework for an enterprise Snowflake deployment. Arrows indicate "is granted to" relationships—privileges flow upward through the hierarchy. Roles that inherit other roles can assume those roles and their privileges.</p>
+
+            <div class="full-hierarchy">
+                <svg viewBox="0 0 1100 750" preserveAspectRatio="xMidYMid meet" style="width: 100%; max-width: 1100px; height: auto;">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#94A3B8"/>
+                        </marker>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- ===== ROW 1: ACCOUNTADMIN ===== -->
+                    <g filter="url(#shadow)">
+                        <rect x="450" y="30" width="200" height="50" rx="10" fill="#DC2626"/>
+                        <text x="550" y="62" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="600" font-size="15">ACCOUNTADMIN</text>
+                    </g>
+                    
+                    <!-- ===== ROW 2: System + Admin roles ===== -->
+                    <!-- SECURITYADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="50" y="140" width="180" height="50" rx="10" fill="#DC2626"/>
+                        <text x="140" y="172" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="600" font-size="14">SECURITYADMIN</text>
+                    </g>
+                    <line x1="140" y1="140" x2="480" y2="80" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- FINOPS_ADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="340" y="140" width="160" height="50" rx="10" fill="#7C3AED"/>
+                        <text x="420" y="172" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="13">FINOPS_ADMIN</text>
+                    </g>
+                    <line x1="420" y1="140" x2="520" y2="80" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- DATA_SHARING_ADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="520" y="140" width="200" height="50" rx="10" fill="#7C3AED"/>
+                        <text x="620" y="172" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="12">DATA_SHARING_ADMIN</text>
+                    </g>
+                    <line x1="620" y1="140" x2="580" y2="80" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- SYSADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="850" y="140" width="180" height="50" rx="10" fill="#DC2626"/>
+                        <text x="940" y="172" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="600" font-size="14">SYSADMIN</text>
+                    </g>
+                    <line x1="940" y1="140" x2="620" y2="80" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- ===== ROW 3: Under SECURITYADMIN ===== -->
+                    <!-- USERADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="30" y="260" width="150" height="45" rx="10" fill="#DC2626"/>
+                        <text x="105" y="289" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="13">USERADMIN</text>
+                    </g>
+                    <line x1="105" y1="260" x2="120" y2="190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- PLATFORM_ADMIN -->
+                    <g filter="url(#shadow)">
+                        <rect x="200" y="260" width="170" height="45" rx="10" fill="#7C3AED"/>
+                        <text x="285" y="289" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="12">PLATFORM_ADMIN</text>
+                    </g>
+                    <line x1="285" y1="260" x2="160" y2="190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- SCIM_PROVISIONER -->
+                    <g filter="url(#shadow)">
+                        <rect x="20" y="370" width="170" height="45" rx="10" fill="#F97316"/>
+                        <text x="105" y="399" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="11">SCIM_PROVISIONER</text>
+                    </g>
+                    <line x1="105" y1="370" x2="105" y2="305" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- ===== LOB EXAMPLE BOX ===== -->
+                    <rect x="420" y="250" width="660" height="370" rx="16" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="10,6"/>
+                    
+                    <!-- Annotation callout centered in box -->
+                    <rect x="540" y="545" width="420" height="55" rx="8" fill="#EEF2FF" stroke="#6366F1" stroke-width="1"/>
+                    <text x="750" y="567" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4F46E5">Business-Specific Roles (Examples)</text>
+                    <text x="750" y="585" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#6366F1">Functional roles typically provisioned via SCIM from your IdP</text>
+                    
+                    <!-- ===== ROW 3 inside LOB: Functional + Service ===== -->
+                    <!-- DATA_ENGINEER_FR -->
+                    <g filter="url(#shadow)">
+                        <rect x="460" y="310" width="170" height="45" rx="10" fill="#0EA5E9"/>
+                        <text x="545" y="339" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="12">DATA_ENGINEER_FR</text>
+                    </g>
+                    
+                    <!-- DATA_ANALYST_FR -->
+                    <g filter="url(#shadow)">
+                        <rect x="650" y="310" width="160" height="45" rx="10" fill="#0EA5E9"/>
+                        <text x="730" y="339" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="12">DATA_ANALYST_FR</text>
+                    </g>
+                    
+                    <!-- BI_SVC -->
+                    <g filter="url(#shadow)">
+                        <rect x="830" y="310" width="100" height="45" rx="10" fill="#0891B2"/>
+                        <text x="880" y="339" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="13">BI_SVC</text>
+                    </g>
+                    
+                    <!-- ETL_SVC -->
+                    <g filter="url(#shadow)">
+                        <rect x="950" y="310" width="100" height="45" rx="10" fill="#0891B2"/>
+                        <text x="1000" y="339" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="13">ETL_SVC</text>
+                    </g>
+                    
+                    <!-- Optional rollup lines to SYSADMIN -->
+                    <line x1="545" y1="310" x2="900" y2="190" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+                    <line x1="730" y1="310" x2="920" y2="190" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+                    <line x1="880" y1="310" x2="940" y2="190" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+                    <line x1="1000" y1="310" x2="960" y2="190" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- ===== ROW 4 inside LOB: Access Roles ===== -->
+                    <!-- RAW_DB_READ_AR -->
+                    <g filter="url(#shadow)">
+                        <rect x="445" y="450" width="140" height="40" rx="8" fill="#10B981"/>
+                        <text x="515" y="476" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="10">RAW_DB_READ_AR</text>
+                    </g>
+                    <line x1="515" y1="450" x2="545" y2="355" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- TRANSFORMED_AR -->
+                    <g filter="url(#shadow)">
+                        <rect x="600" y="450" width="140" height="40" rx="8" fill="#10B981"/>
+                        <text x="670" y="476" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="10">TRANSFORMED_AR</text>
+                    </g>
+                    <line x1="670" y1="450" x2="545" y2="355" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- ANALYTICS_AR -->
+                    <g filter="url(#shadow)">
+                        <rect x="755" y="450" width="130" height="40" rx="8" fill="#10B981"/>
+                        <text x="820" y="476" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="10">ANALYTICS_AR</text>
+                    </g>
+                    <line x1="820" y1="450" x2="730" y2="355" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                    <line x1="820" y1="450" x2="880" y2="355" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- RAW_WRITE_AR -->
+                    <g filter="url(#shadow)">
+                        <rect x="900" y="450" width="130" height="40" rx="8" fill="#10B981"/>
+                        <text x="965" y="476" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-weight="500" font-size="10">RAW_WRITE_AR</text>
+                    </g>
+                    <line x1="965" y1="450" x2="1000" y2="355" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- Database roles note -->
+                    <text x="750" y="515" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#64748B" font-style="italic">Recommend implementing as Database Roles for easier management</text>
+                    
+                    <!-- ===== LEGEND ===== -->
+                    <rect x="50" y="650" width="1000" height="70" rx="12" fill="white" stroke="#E2E8F0" stroke-width="1"/>
+                    <text x="90" y="685" font-family="Inter, sans-serif" font-size="13" font-weight="600" fill="#1E293B">Legend:</text>
+                    
+                    <rect x="160" y="672" width="22" height="22" rx="4" fill="#DC2626"/>
+                    <text x="190" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">System Roles</text>
+                    
+                    <rect x="300" y="672" width="22" height="22" rx="4" fill="#7C3AED"/>
+                    <text x="330" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">Admin Roles</text>
+                    
+                    <rect x="430" y="672" width="22" height="22" rx="4" fill="#0EA5E9"/>
+                    <text x="460" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">Functional</text>
+                    
+                    <rect x="545" y="672" width="22" height="22" rx="4" fill="#0891B2"/>
+                    <text x="575" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">Service</text>
+                    
+                    <rect x="645" y="672" width="22" height="22" rx="4" fill="#10B981"/>
+                    <text x="675" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">Access</text>
+                    
+                    <rect x="745" y="672" width="22" height="22" rx="4" fill="#F97316"/>
+                    <text x="775" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">SCIM</text>
+                    
+                    <line x1="850" y1="683" x2="890" y2="683" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6,4"/>
+                    <text x="900" y="688" font-family="Inter, sans-serif" font-size="12" fill="#475569">Admin Decision</text>
+                </svg>
+            </div>
+        </section>
+
+        <section>
+            <h2>Custom Admin Roles</h2>
+            <p>These roles delegate specific administrative functions without granting full system role access.</p>
+            
+            <div class="quick-ref">
+                <div class="quick-ref-card">
+                    <h5>PLATFORM_ADMIN</h5>
+                    <p>Manages warehouses, resource monitors, network policies, network rules, storage integrations, compute pools, session policies, password policies, authentication policies, notification integrations, tasks, and other Snowflake objects.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>FINOPS_ADMIN</h5>
+                    <p>Monitors costs, manages budgets, and oversees resource consumption. Develops alerts for budget thresholds and cost anomalies. Has visibility into billing and usage metrics to optimize spend.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>DATA_SHARING_ADMIN</h5>
+                    <p>Manages data shares, listings, and external data exchange. Controls where data is shared, but the database owner must separately grant objects to the share. This means DATA_SHARING_ADMIN can manage distribution without having query access to the data itself.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Notes</h2>
+            <ul>
+                <li>So how are grants managed? What about database roles? Is there a way around that?</li>
+            </ul>
+        </section>
+    </div>
+
+    <footer>
+        <p>Snowflake RBAC Design Guide | Created for enterprise administrators</p>
+        <p style="margin-top: 12px; opacity: 0.8;">
+            References: 
+            <a href="https://docs.snowflake.com/en/user-guide/security-access-control-overview" target="_blank">Snowflake Access Control Docs</a> | 
+            <a href="https://docs.snowflake.com/en/user-guide/security-access-control-considerations" target="_blank">Best Practices</a>
+        </p>
+    </footer>
+</body>
+</html>

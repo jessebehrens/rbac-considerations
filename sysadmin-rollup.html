@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSADMIN Rollup | Snowflake RBAC Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .full-hierarchy {
+            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+        
+        .full-hierarchy svg {
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .role-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        
+        .tier-badge {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            fill: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div style="background: #FEF3C7; color: #92400E; padding: 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #F59E0B;">DRAFT - Work in Progress - Not Ready for Distribution</div>
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="logo">RBAC Guide</a>
+            <ul>
+                <li><a href="fundamentals.html">Fundamentals</a></li>
+                <li><a href="role-types.html">Role Types</a></li>
+                <li><a href="database-roles.html">Database Roles</a></li>
+                
+                <li><a href="platform-roles.html">Platform Roles</a></li>
+                <li><a href="checklist.html">Checklist</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="breadcrumb"><a href="index.html">Home</a> / SYSADMIN Rollup</div>
+        <h1>SYSADMIN Rollup Considerations</h1>
+        <p>Understanding when and why to roll up custom roles to SYSADMIN.</p>
+    </div>
+
+    <div class="container-wide">
+        <section>
+            <h2>Why Roll Up to SYSADMIN?</h2>
+            <p>The most important decision in your hierarchy: <strong>should custom roles be granted to SYSADMIN?</strong></p>
+
+            <div class="two-column">
+                <div class="comparison-card">
+                    <h4 style="margin-top: 0; color: var(--sf-success);">Advantages of Rolling Up</h4>
+                    <ul class="checklist">
+                        <li>SYSADMIN can manage all objects in the account</li>
+                        <li>Prevents orphaned objects when roles change</li>
+                        <li>Enables centralized object administration</li>
+                        <li>Follows Snowflake's recommended best practice</li>
+                        <li>Simplifies disaster recovery and role rotation</li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <h4 style="margin-top: 0; color: var(--sf-danger);">Risks of NOT Rolling Up</h4>
+                    <ul class="checklist anti-checklist">
+                        <li>Objects become inaccessible if role is dropped</li>
+                        <li>Only role owner can modify owned objects</li>
+                        <li>Creates hidden dependencies</li>
+                        <li>Complicates auditing and governance</li>
+                        <li>May block data migrations</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <div class="next-page">
+            <a href="role-types.html" class="prev">← Role Types</a>
+            <a href="database-roles.html" class="next">Database Roles →</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>Snowflake RBAC Design Guide</p>
+    </footer>
+</body>
+</html>

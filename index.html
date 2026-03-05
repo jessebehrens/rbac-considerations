@@ -39,10 +39,8 @@
     </style>
 </head>
 <body>
-    <div style="background: #FEF3C7; color: #92400E; padding: 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #F59E0B;">DRAFT - Work in Progress - Not Ready for Distribution</div>
     <nav>
         <div class="nav-inner">
-            <a href="index.html" class="logo">RBAC Framework</a>
             <ul>
             </ul>
         </div>
@@ -50,7 +48,8 @@
 
     <div class="hero hero-large">
         <h1>Snowflake RBAC Framework</h1>
-        <p>A framework for thinking through Role-Based Access Control decisions in Snowflake.</p>
+        <p style="color: white;">A framework for thinking through Role-Based Access Control decisions in Snowflake.</p>
+        <p style="margin-top: 16px; font-size: 0.9em; color: white;">This guide provides a starting point for designing your access control strategy. Adapt these patterns to fit your organization's unique security requirements and operational needs.</p>
     </div>
 
     <div class="container">
@@ -64,15 +63,11 @@
                 </div>
                 <div class="quick-ref-card">
                     <h5>2. Separate Access from Function</h5>
-                    <p>Create Access Roles for object permissions. Create Functional Roles for job titles. Grant access roles to functional roles.</p>
+                    <p>Create Access Roles for object permissions. Create Functional Roles for job titles. Grant access roles to functional roles. Follow your company's naming conventions and best practices to ensure consistency and clarity across teams.</p>
                 </div>
                 <div class="quick-ref-card">
                     <h5>3. Plan Your Hierarchy Intentionally</h5>
-                    <p>Decide early whether custom roles should <a href="sysadmin-rollup.html">roll up to SYSADMIN</a>. There's no one-size-fits-all answer—base this on your governance model, compliance needs, and operational structure.</p>
-                </div>
-                <div class="quick-ref-card">
-                    <h5>4. Use Future Grants</h5>
-                    <p>Set up future grants so new objects automatically inherit correct permissions. Reduces ongoing maintenance.</p>
+                    <p>Decide early whether custom roles should <a href="sysadmin-rollup.html">roll up to SYSADMIN</a>. There's no one-size-fits-all answer—base this on your governance model, compliance needs, and operational structure. Start granular—it's easier to consolidate roles later than to split them apart.</p>
                 </div>
             </div>
         </section>
@@ -160,9 +155,9 @@
                     <rect x="390" y="250" width="710" height="370" rx="16" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="10,6"/>
                     
                     <!-- Annotation callout centered in box -->
-                    <rect x="535" y="545" width="420" height="55" rx="8" fill="#EEF2FF" stroke="#6366F1" stroke-width="1"/>
-                    <text x="745" y="567" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#4F46E5">Business-Specific Roles (Examples)</text>
-                    <text x="745" y="585" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#6366F1">Functional roles typically provisioned via SCIM from your IdP</text>
+                    <rect x="535" y="545" width="420" height="55" rx="8" fill="#4F46E5" stroke="#4338CA" stroke-width="1"/>
+                    <text x="745" y="565" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="white">Business-Specific Roles (Examples)</text>
+                    <text x="745" y="585" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="white">Functional roles typically provisioned via SCIM from your IdP</text>
                     
                     <!-- ===== ROW 3 inside LOB: Functional + Service ===== -->
                     <!-- DATA_ENGINEER_FR -->
@@ -272,6 +267,10 @@
                 <div class="quick-ref-card">
                     <h5>DATA_SHARING_ADMIN</h5>
                     <p>Manages data shares, listings, and external data exchange. Controls where data is shared, but the database owner must separately grant objects to the share. This means DATA_SHARING_ADMIN can manage distribution without having query access to the data itself.</p>
+                </div>
+                <div class="quick-ref-card">
+                    <h5>&lt;LOB&gt;_SYSADMIN</h5>
+                    <p>A line-of-business specific admin role that owns and manages databases, schemas, and objects for a particular business unit. Created outside the default role hierarchy so that custom roles and their access don't automatically roll up to ACCOUNTADMIN.</p>
                 </div>
             </div>
         </section>
